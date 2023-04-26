@@ -10,14 +10,12 @@ import com.serotonin.mango.vo.WatchList;
 import com.serotonin.mango.vo.permission.DataPointAccess;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.scada_lts.dao.IUserCommentDAO;
-import org.scada_lts.dao.IUserDAO;
-import org.scada_lts.dao.IUsersProfileDAO;
-import org.scada_lts.dao.IViewDAO;
+import org.scada_lts.config.ScadaConfig;
+import org.scada_lts.dao.*;
 import org.scada_lts.dao.cache.HighestAlarmLevelCachable;
 import org.scada_lts.dao.cache.UserCachable;
 import org.scada_lts.dao.cache.UserCommentCachable;
-import org.scada_lts.dao.cache.UsersProfileCachable;
+import org.scada_lts.dao.cache.UsersProfileCacheable;
 import org.scada_lts.mango.service.UserCommentService;
 import org.scada_lts.dao.cache.ViewCachable;
 
@@ -51,7 +49,7 @@ public class ApplicationBeans {
     }
 
     public static IUsersProfileDAO getUsersProfileDaoBean() {
-        boolean usersprofileCacheEnabled = Common.getEnvironmentProfile().getBoolean(UsersProfileCachable.CACHE_ENABLED_KEY, true);
+        boolean usersprofileCacheEnabled = Common.getEnvironmentProfile().getBoolean(UsersProfileCacheable.CACHE_ENABLED_KEY, true);
         return usersprofileCacheEnabled ?
                 getBeanFromContext("usersProfileDaoWithCache", IUsersProfileDAO.class) :
                 getBeanFromContext("usersProfileDAO", IUsersProfileDAO.class);
@@ -132,6 +130,13 @@ public class ApplicationBeans {
 
     }
 
+    public static IPointEventDetectorDAO getPointEventDetectorDaoBean() {
+        boolean viewCacheEnabled = Common.getEnvironmentProfile().getBoolean(ScadaConfig.ENABLE_CACHE, true);
+        return viewCacheEnabled ?
+                getBeanFromContext("pointEventDetectorDaoWithCache", IPointEventDetectorDAO.class) :
+                getBeanFromContext("pointEventDetectorDAO", IPointEventDetectorDAO.class);
+    }
+
     public static DataSource getDatabaseSourceBean() {
         return getBeanFromContext("databaseSource", DataSource.class);
     }
@@ -148,7 +153,6 @@ public class ApplicationBeans {
         return getBeanFromContext("eventsServiceWebSocket", EventsServiceWebSocket.class);
     }
 
-    @Deprecated
     public static class Lazy {
 
         private Lazy() {}
@@ -169,7 +173,7 @@ public class ApplicationBeans {
             try {
                 return Optional.ofNullable(get(beanName, clazz));
             } catch (NoSuchBeanDefinitionException ex) {
-                LOG.error(ex);
+                LOG.warn(ex);
                 return Optional.empty();
             } catch (Exception ex) {
                 LOG.error(ex.getMessage(), ex);
